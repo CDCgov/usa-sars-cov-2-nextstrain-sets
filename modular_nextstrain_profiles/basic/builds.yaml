@@ -1,0 +1,46 @@
+# Basic build example using randomly subsampled West Virginia data 
+# and contextual USA data
+
+files:
+  auspice_config: "modular_nextstrain_profiles/auspice_config.json"
+
+genes: ["ORF1a", "ORF1b", "S", "ORF3a", "M", "N"]
+
+inputs:
+# Download 2000 sample unweighted West Virginia data set
+  - name: statedata
+    sequences: https://s3.us-east-1.amazonaws.com/io-pe1-prod-ncezid-oamd-nextstrain/WestVirginia/WestVirginia-2000-unweighted-aligned.fasta.xz
+    metadata: https://s3.us-east-1.amazonaws.com/io-pe1-prod-ncezid-oamd-nextstrain/WestVirginia/WestVirginia-2000-unweighted-metadata.tsv.xz
+# Include reference sequences distributed with ncov
+  - name: references
+    sequences: data/references_sequences.fasta
+    metadata: data/references_metadata.tsv
+# Use Nextstrain open data for North America as contextual data
+  - name: northamerica
+    sequences: https://data.nextstrain.org/files/ncov/open/north-america/aligned.fasta.xz
+    metadata: https://data.nextstrain.org/files/ncov/open/north-america/metadata.tsv.xz
+
+# Define builds for each state and territory.
+builds:
+  basic:
+    subsampling_scheme: basic
+    region: North America
+    country: USA
+    division: West Virginia
+
+
+# Define subsampling scheme for state- and territory-level (hereafter
+# "division") builds. This scheme should include as much local diversity for a
+# given division as possible and contextual samples from the rest of the USA
+subsampling:
+  basic:
+    local-focus:
+      # Local focus selects 500 sequences from state data, subsampled evenly across time.
+      group_by: "year month"
+      max_sequences: 500
+      query: --query "(statedata == 'yes') & (country == '{country}') & (division == '{division}')"
+    usa-context:
+      # Evenly sample across time from other divisions in USA
+      group_by: "division year month"
+      max_sequences: 200
+      query: --query "(country == '{country}') & (division != '{division}')"

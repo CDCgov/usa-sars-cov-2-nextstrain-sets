@@ -1,0 +1,66 @@
+# Basic build example using data from a target state and background from neighboring states
+# and contextual USA data
+
+files:
+  auspice_config: "modular_nextstrain_profiles/auspice_config.json"
+
+genes: ["ORF1a", "ORF1b", "S", "ORF3a", "M", "N"]
+
+inputs:
+# Download 2000 sample unweighted New Jersey data set
+  - name: nj
+    sequences: https://s3.us-east-1.amazonaws.com/io-pe1-prod-ncezid-oamd-nextstrain/NewJersey/NewJersey-2000-unweighted-aligned.fasta.xz
+    metadata: https://s3.us-east-1.amazonaws.com/io-pe1-prod-ncezid-oamd-nextstrain/NewJersey/NewJersey-2000-unweighted-metadata.tsv.xz
+# Download 1000 sample unweighted New York data set
+  - name: ny
+    sequences: https://s3.us-east-1.amazonaws.com/io-pe1-prod-ncezid-oamd-nextstrain/NewYork/NewYork-1000-unweighted-aligned.fasta.xz
+    metadata: https://s3.us-east-1.amazonaws.com/io-pe1-prod-ncezid-oamd-nextstrain/NewYork/NewYork-1000-unweighted-metadata.tsv.xz
+# Download 1000 sample, unweighted New York data set
+  - name: pa
+    sequences: https://s3.us-east-1.amazonaws.com/io-pe1-prod-ncezid-oamd-nextstrain/Pennsylvania/Pennsylvania-1000-unweighted-aligned.fasta.xz
+    metadata: https://s3.us-east-1.amazonaws.com/io-pe1-prod-ncezid-oamd-nextstrain/Pennsylvania/Pennsylvania-1000-unweighted-metadata.tsv.xz
+
+# Include reference sequences distributed with ncov
+  - name: references
+    sequences: data/references_sequences.fasta
+    metadata: data/references_metadata.tsv
+# Use Nextstrain open data for North America as contextual data
+  - name: northamerica
+    sequences: https://data.nextstrain.org/files/ncov/open/north-america/aligned.fasta.xz
+    metadata: https://data.nextstrain.org/files/ncov/open/north-america/metadata.tsv.xz
+
+  
+# Define builds for each state and territory.
+builds:
+  tristate:
+    subsampling_scheme: tristate
+    region: North America
+    country: USA
+    division: New Jersey
+
+
+# Define subsampling scheme for state- and territory-level (hereafter
+# "division") builds. This scheme should include as much local diversity for a
+# given division as possible and contextual samples from the rest of the USA
+subsampling:
+  tristate:
+    local-focus:
+      # Local focus selects 500 sequences from state data, subsampled evenly across time.
+      group_by: "year month"
+      max_sequences: 500
+      query: --query "(nj == 'yes') & (country == '{country}') & (division == '{division}')"
+    neighbor1:
+      # Local focus selects 100 sequences from state data, subsampled evenly across time.
+      group_by: "year month"
+      max_sequences: 100
+      query: --query "(ny == 'yes') & (country == '{country}') & (division == 'New York')"
+    neighbor2:
+      # Local focus selects 100 sequences from state data, subsampled evenly across time.
+      group_by: "year month"
+      max_sequences: 100
+      query: --query "(pa == 'yes') & (country == '{country}') & (division == 'Pennsylvania')"
+    usa-context:
+      # Evenly sample across time from other divisions in USA
+      group_by: "division year month"
+      max_sequences: 100
+      query: --query "(northamerica == 'yes') & (country == '{country}') & (division != '{division}') & (division != 'New York') & (division != 'Pennsylvania')"

@@ -1,0 +1,63 @@
+# Hybrid build using local data and remote data 
+# and contextual USA data
+
+files:
+  auspice_config: "modular_nextstrain_profiles/auspice_config.json"
+
+genes: ["ORF1a", "ORF1b", "S", "ORF3a", "M", "N"]
+
+inputs:
+# Download 2000 sample unweighted Michigan data set
+  - name: publicdata
+    sequences: https://s3.us-east-1.amazonaws.com/io-pe1-prod-ncezid-oamd-nextstrain/Michigan/Michigan-2000-unweighted-aligned.fasta.xz
+    metadata: https://s3.us-east-1.amazonaws.com/io-pe1-prod-ncezid-oamd-nextstrain/Michigan/Michigan-2000-unweighted-metadata.tsv.xz
+# Specify a local data set.  Standard nextstrain/ncov example data used here to ensure it is available.
+# User would substitute their own data set here.
+  - name: privatedata
+    sequences: data/example_sequences.fasta.gz
+    metadata: data/example_metadata.tsv
+# Include reference sequences distributed with ncov
+  - name: references
+    sequences: data/references_sequences.fasta
+    metadata: data/references_metadata.tsv
+# Use Nextstrain open data for North America contextual data
+  - name: northamerica
+    sequences: https://data.nextstrain.org/files/ncov/open/north-america/aligned.fasta.xz
+    metadata: https://data.nextstrain.org/files/ncov/open/north-america/metadata.tsv.xz
+# Use Nextstrain open data for global contextual data
+  - name: globaldata
+    sequences: "https://data.nextstrain.org/files/ncov/open/global/aligned.fasta.xz"
+    metadata: "https://data.nextstrain.org/files/ncov/open/global/metadata.tsv.xz"
+
+  
+# Define builds for each state and territory.
+builds:
+  hybrid-build:
+    subsampling_scheme: hybrid
+    region: North America
+    country: USA
+    division: Michigan
+
+# Define subsampling scheme for state- and territory-level (hereafter
+# "division") builds. This scheme should include as much local diversity for a
+# given division as possible and contextual samples from the rest of the USA
+subsampling:
+  hybrid:
+    local-focus:
+      # Select all sequences from local sequence data (data/example_sequences used here).
+      query: --query "privatedata == 'yes'"
+    local-context:
+      # Local background select 500 sequences from public state data, subsampled evenly across time.
+      group_by: "year month"
+      max_sequences: 500
+      query: --query "(publicdata == 'yes') & (country == '{country}') & (division == '{division}')"
+    usa-context:
+      # Evenly sample across time from other divisions in USA
+      group_by: "year month"
+      max_sequences: 200
+      query: --query "(northamerica == 'yes') & (country == '{country}') & (division != '{division}')"
+    global-context:
+      # Evenly sample across time and region from global sequences
+      group_by: "region year month"
+      max_sequences: 200
+      query: --query "(globaldata == 'yes') & (country != '{country}')"
