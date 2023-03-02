@@ -27,7 +27,7 @@ This repository contains tools for building custom [Nextstrain](https://nextstra
 These data provide users with pre-computed, up-to-date sequence and metadata files organized in a way that prioritizes:
 
  - **Simplified usage.**  Users are not required to download or manipulate the data in order to incorporate them into custom Nextstrain builds.
- - **Powerful customization.**  Users can further customized analyses by modifying the example Nextstrain `builds.yaml` files.
+ - **Powerful customization.**  Users can further customize analyses by modifying the example Nextstrain `builds.yaml` files.
  - **Open data.**  All data is derived from publicly-available resources.
  - **Right-sized.**  Datasets subsampled to varied sizes are available to reduce computational demands.
  - **Correct formating.**  Sequence and metadata files are ready to be used in Nextstrain.
